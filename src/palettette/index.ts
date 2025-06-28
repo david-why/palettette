@@ -8,6 +8,11 @@ interface TryData {
   varIndex: number
 }
 
+interface FunctionData {
+  location: Vector2D
+  varIndex: number
+}
+
 export class PalettetteRuntimeError extends Error {
   constructor(public code: number) {
     super(`Uncaught Palettette error ${code}`)
@@ -24,14 +29,19 @@ export class Palettette {
   private location: Vector2D = { x: 0, y: 0 }
   private direction: Vector2D = { x: 1, y: 0 }
   private vars: Uint8Array = new Uint8Array(256)
-  private functions: (null | Vector2D)[] = Array.from(
+  private functions: (null | FunctionData)[] = Array.from(
     { length: 256 },
     () => null,
   )
   private try: TryData | null = null
+  public inputIndex: number = 0
+  public output: string = ""
   public isRunning: boolean = false
 
-  constructor(public ctx: CanvasRenderingContext2D) {
+  constructor(
+    public ctx: CanvasRenderingContext2D,
+    public input: string,
+  ) {
     this.width = ctx.canvas.width
     this.height = ctx.canvas.height
     this.initialData = ctx.getImageData(0, 0, this.width, this.height)
@@ -44,6 +54,8 @@ export class Palettette {
     this.vars.fill(0)
     this.functions.fill(null)
     this.try = null
+    this.inputIndex = 0
+    this.output = ""
     this.isRunning = false
   }
 
@@ -55,7 +67,7 @@ export class Palettette {
   private getPixel(advance: number = 0) {
     let { x, y } = this.location
     x = (x + (this.width + this.direction.x) * advance) % this.width
-    y = (x + (this.height + this.direction.y) * advance) % this.height
+    y = (y + (this.height + this.direction.y) * advance) % this.height
     const index = y * this.width + x
     return this.initialData.data.slice(index * 4, index * 4 + 3)
   }
@@ -70,11 +82,33 @@ export class Palettette {
     }
   }
 
-  step() {
+  private drawAnimated() {
+    const imageData = new ImageData(
+      new Uint8ClampedArray(this.initialData.data),
+      this.width,
+      this.height,
+    )
+    for (let x = 0; x < this.width; x++) {
+      for (let y = 0; y < this.height; y++) {
+        const multiplier =
+          this.location.x == x && this.location.y == y ? 2 : 0.7
+        imageData.data[(y * this.width + x) * 4 + 0] *= multiplier
+        imageData.data[(y * this.width + x) * 4 + 1] *= multiplier
+        imageData.data[(y * this.width + x) * 4 + 2] *= multiplier
+      }
+    }
+    this.ctx.putImageData(imageData, 0, 0)
+  }
+
+  step({ animate }: { animate: boolean } = { animate: true }) {
     if (!this.isRunning) {
       return
     }
     const [r, g, b] = this.getPixel()
+    console.log("[Palettette] Running instruction: ", [r, g, b])
+    if (animate) {
+      this.drawAnimated()
+    }
     if (r == 0) {
       // Halt
       this.isRunning = false
@@ -106,6 +140,52 @@ export class Palettette {
       } else {
         this.vars[b] = Math.floor(this.vars[b] / rhs)
       }
+    } else if (r == 3) {
+      // Function
+      this.functions[b] = { location: this.location, varIndex: g }
+    } else if (r == 4) {
+      // Try
+      this.try = { location: this.location, varIndex: b }
+    } else if (r == 5) {
+      // Branch
+      if (this.vars[g] == this.vars[b]) {
+        this.direction = { x: -this.direction.y, y: this.direction.x }
+      }
+    } else if (r == 6) {
+      // Throw
+      this.throwError(this.vars[g])
+    } else if (r == 7) {
+      // Input
+      if (this.inputIndex >= this.input.length) {
+        this.throwError(2)
+      } else {
+        this.vars[b] = this.input.charCodeAt(this.inputIndex++)
+      }
+    } else if (r == 8) {
+      // Output
+      const char = this.vars[b]
+      if (char < 33 || char > 126) {
+        this.throwError(3)
+      } else {
+        this.output += String.fromCharCode(char)
+      }
+    } else if (r == 9) {
+      // Call
+      const func = this.functions[b]
+      if (!func) {
+        this.throwError(4)
+      } else {
+        this.vars[func.varIndex] = this.vars[g]
+        this.location = func.location
+      }
+    } else if (r == 255) {
+      // NOP
+    } else {
+      this.throwError(5)
     }
+    this.location.x =
+      (this.location.x + this.direction.x + this.width) % this.width
+    this.location.y =
+      (this.location.y + this.direction.y + this.height) % this.height
   }
 }

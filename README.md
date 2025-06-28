@@ -10,7 +10,9 @@ The interpreter has 256 variables with indices 0 to 255, all of which one byte a
 
 The pixels are treated as separate RGB values from 0 to 255. The R value determines the instruction to execute. The G and B values designate inputs and/or outputs, as detailed below.
 
-The interpreter supports functions. There can be a maximum of 256 functions, indexed from 0 to 255. To call a function means to change the current location to the location where Function is called. Functions all have exactly one parameter, which is a variable; they can write to that variable to return a value.
+The interpreter supports functions. There can be a maximum of 256 functions, indexed from 0 to 255. To call a function means to change the current location to the location where Function is called. Functions all have exactly one parameter.
+
+One thing to keep in mind is, during whatever kind of jump operation (calling a function, Try, etc.), the direction will NOT be changed. This means that if a function is called while the interpreter direction is different from the direction when the function is defined, the function's code won't be run at all! This is intentional.
 
 There is an input stream, which can be read one character at a time. There is also an output stream which can be written.
 
@@ -59,7 +61,7 @@ Throws:
 Defines a function with the given index.
 
 Parameters:
-- G: The variable index for the parameter / output (0 to 255).
+- G: The variable index to receive the parameter (0 to 255).
 - B: The function index (0 to 255).
 
 ### 4. Try
@@ -113,7 +115,7 @@ Throws:
 Calls a defined function.
 
 Parameters:
-- G: The variable index to pass as a parameter / receive output (0 to 255).
+- G: The variable index to pass as a parameter (0 to 255).
 - B: The function index to call (0 to 255).
 
 Throws:

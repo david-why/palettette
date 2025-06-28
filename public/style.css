@@ -16,4 +16,5 @@ canvas {
   border: 1px dashed red;
   padding: 5px;
   width: 100%;
+  background: #888;
 }
