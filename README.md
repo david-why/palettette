@@ -38,6 +38,9 @@ Parameters:
 - G: The channel selection (1 for R, 2 for G, 3 for B).
 - B: The variable index (0 to 255).
 
+Throws:
+- `0` if the parameter G is out of range.
+
 ### 2. Calculate
 
 Performs a calculation on a variable, using a channel of the next pixel. The variable is mutated; the pixel is unchanged.
@@ -48,6 +51,7 @@ Parameters:
 - B: The variable index (0 to 255).
 
 Throws:
+- `0` if the parameter G is invalid.
 - `1` if a divide-by-zero error occurred.
 
 ### 3. Function
@@ -114,6 +118,11 @@ Parameters:
 
 Throws:
 - `4` if the function is not defined.
+
+### 10-254. Invalid
+
+Throws:
+- `5`
 
 ### 255. NOP
 
