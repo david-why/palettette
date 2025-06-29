@@ -39,9 +39,81 @@ function setPixel(
   ctx.putImageData(data, x, y)
 }
 
+function onRun() {
+  palettette.input = inputField.value
+  palettette.run()
+}
+
 function onTick() {
   palettette.step()
   outputField.value = palettette.output
+}
+
+function fixTransparent() {
+  const data = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height)
+  for (let i = 0; i < data.data.length / 4; i++) {
+    if (data.data[i * 4 + 3] != 255) {
+      if (
+        data.data[i * 4] == 0 &&
+        data.data[i * 4 + 1] == 0 &&
+        data.data[i * 4 + 2] == 0
+      ) {
+        data.data.set([255, 255, 255, 255], i * 4)
+      } else {
+        data.data[i * 4 + 3] = 255
+      }
+    }
+  }
+  ctx.putImageData(data, 0, 0)
+}
+
+function handleFile(file: Blob) {
+  const url = URL.createObjectURL(file)
+
+  palettette.reset()
+  runButton.disabled = true
+
+  const image = new Image()
+  image.addEventListener("load", () => {
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+    fixTransparent()
+
+    palettette = new Palettette(ctx)
+    onResize()
+
+    runButton.disabled = false
+    URL.revokeObjectURL(url)
+  })
+  image.addEventListener("error", (event) => {
+    alert(`Error loading image: ${event.message}`)
+
+    runButton.disabled = false
+    URL.revokeObjectURL(url)
+  })
+  image.src = url
+}
+
+function onUpload() {
+  const files = uploadField.files
+  if (!files || !files.length) return
+  const file = files[0]
+  handleFile(file)
+}
+
+function onDragging(event: DragEvent) {
+  event.preventDefault()
+}
+
+function onDrop(event: DragEvent) {
+  if (event.dataTransfer?.items.length) {
+    const file = event.dataTransfer.items[0]
+    if (file.kind == "file" && file.type.startsWith("image/")) {
+      event.preventDefault()
+      handleFile(file.getAsFile()!)
+    }
+  }
 }
 
 function init() {
@@ -53,7 +125,7 @@ function init() {
 
   canvas.width = 25
   canvas.height = 25
-  ctx = canvas.getContext("2d")!
+  ctx = canvas.getContext("2d", { willReadFrequently: true })!
 
   for (let y = 0; y < canvas.height; y++) {
     for (let x = 0; x < canvas.width; x++) {
@@ -67,39 +139,12 @@ function init() {
 
   palettette = new Palettette(ctx)
 
-  runButton.addEventListener("click", () => {
-    palettette.input = inputField.value
-    palettette.run()
-  })
-
-  uploadField.addEventListener("input", () => {
-    const files = uploadField.files
-    if (!files || !files.length) return
-    const file = files[0]
-    const url = URL.createObjectURL(file)
-
-    palettette.reset()
-    runButton.disabled = true
-
-    const image = new Image()
-    image.addEventListener("load", () => {
-      canvas.width = image.naturalWidth
-      canvas.height = image.naturalHeight
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
-
-      palettette = new Palettette(ctx)
-
-      runButton.disabled = false
-    })
-    image.addEventListener("error", (event) => {
-      alert(`Error loading image: ${event.message}`)
-
-      runButton.disabled = false
-    })
-    image.src = url
-  })
-
+  runButton.addEventListener("click", onRun)
+  uploadField.addEventListener("input", onUpload)
   window.addEventListener("resize", onResize)
+  document.addEventListener("dragenter", onDragging)
+  document.addEventListener("dragover", onDragging)
+  document.addEventListener("drop", onDrop)
   onResize()
 
   setInterval(onTick, 100)
