@@ -49,7 +49,7 @@ export class Palettette {
 
   constructor(
     public ctx: CanvasRenderingContext2D,
-    public input: string,
+    public input: string = "",
   ) {
     this.width = ctx.canvas.width
     this.height = ctx.canvas.height
@@ -92,6 +92,10 @@ export class Palettette {
   }
 
   private drawAnimated() {
+    if (!this.isRunning) {
+      this.ctx.putImageData(this.initialData, 0, 0)
+      return
+    }
     const imageData = new ImageData(
       new Uint8ClampedArray(this.initialData.data),
       this.width,
@@ -100,7 +104,7 @@ export class Palettette {
     for (let x = 0; x < this.width; x++) {
       for (let y = 0; y < this.height; y++) {
         const multiplier =
-          this.location.x == x && this.location.y == y ? 2 : 0.7
+          this.location.x == x && this.location.y == y ? 1 : 0.7
         imageData.data[(y * this.width + x) * 4 + 0] *= multiplier
         imageData.data[(y * this.width + x) * 4 + 1] *= multiplier
         imageData.data[(y * this.width + x) * 4 + 2] *= multiplier
@@ -124,6 +128,7 @@ export class Palettette {
 
   step({ animate }: { animate: boolean } = { animate: true }) {
     if (!this.isRunning) {
+      this.drawAnimated()
       return
     }
     const [r, g, b] = this.getPixel()
