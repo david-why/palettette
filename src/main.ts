@@ -10,8 +10,22 @@ let palettette: Palettette
 
 let ctx: CanvasRenderingContext2D
 
-function getPixel(x: number, y: number): Uint8ClampedArray {
-  return ctx.getImageData(x, y, 1, 1).data.slice(0, 3)
+function onResize() {
+  const width = canvas.width
+  const height = canvas.height
+
+  const maxWidth = window.innerWidth * 0.8
+  const maxHeight = window.innerHeight * 0.8
+
+  if (width / height > maxWidth / maxHeight) {
+    // width is limiting
+    canvas.style.width = `${maxWidth}px`
+    canvas.style.height = `${(maxWidth / width) * height}px`
+  } else {
+    // height is limiting
+    canvas.style.width = `${(maxHeight / height) * width}px`
+    canvas.style.height = `${maxHeight}px`
+  }
 }
 
 function setPixel(
@@ -84,6 +98,9 @@ function init() {
     })
     image.src = url
   })
+
+  window.addEventListener("resize", onResize)
+  onResize()
 
   setInterval(onTick, 100)
 }

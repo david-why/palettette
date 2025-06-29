@@ -13,9 +13,11 @@ body {
   box-sizing: border-box;
 }
 
-canvas {
+#palettette-canvas {
   border: 1px dashed red;
   padding: 5px;
-  width: 100%;
+  /* width: 100%; */
+  /* width: 80vh; */
+  height: 80vh;
   background: #888;
 }

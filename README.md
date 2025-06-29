@@ -65,6 +65,17 @@ Parameters:
 - G: The variable index to receive the parameter (0 to 255).
 - B: The function index (0 to 255).
 
+### 122. Return
+
+Returns from a function previously Called.
+
+Parameters:
+- G: Unused.
+- B: Unused.
+
+Throws:
+- `66` if no function was called.
+
 ### 105. Try
 
 Starts a try block that catches the next error thrown.

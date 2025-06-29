@@ -26,6 +26,7 @@ const Errors = {
   outputNonASCII: 155,
   functionUndefined: 22,
   invalidInstruction: 50,
+  noFunctionCalled: 66
 }
 
 // This is responsible for running the simulation.
@@ -43,6 +44,7 @@ export class Palettette {
     () => null,
   )
   private try: TryData | null = null
+  private callStack: Vector2D[] = []
   public inputIndex: number = 0
   public output: string = ""
   public isRunning: boolean = false
@@ -63,6 +65,7 @@ export class Palettette {
     this.vars.fill(0)
     this.functions.fill(null)
     this.try = null
+    this.callStack.length = 0
     this.inputIndex = 0
     this.output = ""
     this.isRunning = false
@@ -180,6 +183,13 @@ export class Palettette {
     } else if (r == 105) {
       // Try
       this.try = { location: this.location, varIndex: b }
+    } else if (r == 122) {
+      // Return
+      if (this.callStack.length) {
+        this.location = this.callStack.pop()!
+      } else {
+        this.throwError(Errors.noFunctionCalled)
+      }
     } else if (r == 134) {
       // Branch
       if (this.vars[g] == this.vars[b]) {
@@ -210,6 +220,7 @@ export class Palettette {
         this.throwError(Errors.functionUndefined)
       } else {
         this.vars[func.varIndex] = this.vars[g]
+        this.callStack.push(this.location)
         this.location = func.location
       }
     } else if (r == 255) {
