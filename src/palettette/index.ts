@@ -19,6 +19,15 @@ export class PalettetteRuntimeError extends Error {
   }
 }
 
+const Errors = {
+  invalidParameter: 252,
+  divideByZero: 92,
+  inputStreamEmpty: 108,
+  outputNonASCII: 155,
+  functionUndefined: 22,
+  invalidInstruction: 50,
+}
+
 // This is responsible for running the simulation.
 // A new instance should be created for a new image.
 export class Palettette {
@@ -100,6 +109,19 @@ export class Palettette {
     this.ctx.putImageData(imageData, 0, 0)
   }
 
+  private mapChannelToIndex(channel: number) {
+    switch (channel) {
+      case 123:
+        return 1
+      case 222:
+        return 2
+      case 169:
+        return 3
+      default:
+        this.throwError(Errors.invalidParameter)
+    }
+  }
+
   step({ animate }: { animate: boolean } = { animate: true }) {
     if (!this.isRunning) {
       return
@@ -112,68 +134,75 @@ export class Palettette {
     if (r == 0) {
       // Halt
       this.isRunning = false
-    } else if (r == 1) {
+    } else if (r == 28) {
       // Set variable
-      if (g < 1 || g > 3) {
-        this.throwError(0)
-      }
       const next = this.getPixel(1)
-      this.vars[b] = next[g - 1]
-    } else if (r == 2) {
+      const index = this.mapChannelToIndex(g)
+      if (index) {
+        this.vars[b] = next[index - 1]
+      }
+    } else if (r == 59) {
       // Calculate
-      const channel = g & 3
-      const operator = g & 252
-      if (channel < 1 || channel > 3 || operator < 1 || operator > 4) {
-        this.throwError(0)
+      const channel = this.mapChannelToIndex(g & 3)
+      const operator = g >> 5
+      if (
+        operator != 55 &&
+        operator != 110 &&
+        operator != 165 &&
+        operator != 220
+      ) {
+        this.throwError(Errors.invalidParameter)
       }
-      const next = this.getPixel(1)
-      const rhs = next[channel - 1]
-      if (operator == 4 && rhs == 0) {
-        this.throwError(1)
+      if (channel) {
+        const next = this.getPixel(1)
+        const rhs = next[channel - 1]
+        if (operator == 4 && rhs == 0) {
+          this.throwError(Errors.divideByZero)
+        }
+        if (operator == 55) {
+          this.vars[b] = this.vars[b] + rhs
+        } else if (operator == 110) {
+          this.vars[b] = this.vars[b] - rhs
+        } else if (operator == 165) {
+          this.vars[b] = this.vars[b] * rhs
+        } else {
+          this.vars[b] = Math.floor(this.vars[b] / rhs)
+        }
       }
-      if (operator == 1) {
-        this.vars[b] = this.vars[b] + rhs
-      } else if (operator == 2) {
-        this.vars[b] = this.vars[b] - rhs
-      } else if (operator == 3) {
-        this.vars[b] = this.vars[b] * rhs
-      } else {
-        this.vars[b] = Math.floor(this.vars[b] / rhs)
-      }
-    } else if (r == 3) {
+    } else if (r == 72) {
       // Function
       this.functions[b] = { location: this.location, varIndex: g }
-    } else if (r == 4) {
+    } else if (r == 105) {
       // Try
       this.try = { location: this.location, varIndex: b }
-    } else if (r == 5) {
+    } else if (r == 134) {
       // Branch
       if (this.vars[g] == this.vars[b]) {
         this.direction = { x: -this.direction.y, y: this.direction.x }
       }
-    } else if (r == 6) {
+    } else if (r == 173) {
       // Throw
       this.throwError(this.vars[g])
-    } else if (r == 7) {
+    } else if (r == 192) {
       // Input
       if (this.inputIndex >= this.input.length) {
-        this.throwError(2)
+        this.throwError(Errors.inputStreamEmpty)
       } else {
         this.vars[b] = this.input.charCodeAt(this.inputIndex++)
       }
-    } else if (r == 8) {
+    } else if (r == 210) {
       // Output
       const char = this.vars[b]
       if (char < 33 || char > 126) {
-        this.throwError(3)
+        this.throwError(Errors.outputNonASCII)
       } else {
         this.output += String.fromCharCode(char)
       }
-    } else if (r == 9) {
+    } else if (r == 242) {
       // Call
       const func = this.functions[b]
       if (!func) {
-        this.throwError(4)
+        this.throwError(Errors.functionUndefined)
       } else {
         this.vars[func.varIndex] = this.vars[g]
         this.location = func.location
@@ -181,7 +210,7 @@ export class Palettette {
     } else if (r == 255) {
       // NOP
     } else {
-      this.throwError(5)
+      this.throwError(Errors.invalidInstruction)
     }
     this.location.x =
       (this.location.x + this.direction.x + this.width) % this.width

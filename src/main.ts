@@ -39,9 +39,9 @@ function init() {
       setPixel(x, y, [255, 255, 255])
     }
   }
-  setPixel(0, 0, [1, 3, 100])
-  setPixel(1, 0, [1, 1, 72])
-  setPixel(2, 0, [8, 255, 100])
+  setPixel(0, 0, [28, 3, 100])
+  setPixel(1, 0, [28, 1, 72])
+  setPixel(2, 0, [210, 255, 100])
 
   palettette = new Palettette(ctx, "")
 
