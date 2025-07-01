@@ -150,6 +150,4 @@ function init() {
   setInterval(onTick, 100)
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  init()
-})
+document.addEventListener("DOMContentLoaded", init)

@@ -26,7 +26,7 @@ const Errors = {
   outputNonASCII: 155,
   functionUndefined: 22,
   invalidInstruction: 50,
-  noFunctionCalled: 66
+  noFunctionCalled: 66,
 }
 
 // This is responsible for running the simulation.
@@ -151,14 +151,9 @@ export class Palettette {
       }
     } else if (r == 59) {
       // Calculate
-      const channel = this.mapChannelToIndex(g & 3)
+      const channel = g & 3
       const operator = g >> 5
-      if (
-        operator != 55 &&
-        operator != 110 &&
-        operator != 165 &&
-        operator != 220
-      ) {
+      if (channel < 1 || operator < 1 || operator > 4) {
         this.throwError(Errors.invalidParameter)
       }
       if (channel) {
@@ -167,11 +162,11 @@ export class Palettette {
         if (operator == 4 && rhs == 0) {
           this.throwError(Errors.divideByZero)
         }
-        if (operator == 55) {
+        if (operator == 1) {
           this.vars[b] = this.vars[b] + rhs
-        } else if (operator == 110) {
+        } else if (operator == 2) {
           this.vars[b] = this.vars[b] - rhs
-        } else if (operator == 165) {
+        } else if (operator == 3) {
           this.vars[b] = this.vars[b] * rhs
         } else {
           this.vars[b] = Math.floor(this.vars[b] / rhs)
@@ -179,10 +174,10 @@ export class Palettette {
       }
     } else if (r == 72) {
       // Function
-      this.functions[b] = { location: this.location, varIndex: g }
+      this.functions[b] = { location: { ...this.location }, varIndex: g }
     } else if (r == 105) {
       // Try
-      this.try = { location: this.location, varIndex: b }
+      this.try = { location: { ...this.location }, varIndex: b }
     } else if (r == 122) {
       // Return
       if (this.callStack.length) {
@@ -208,7 +203,7 @@ export class Palettette {
     } else if (r == 210) {
       // Output
       const char = this.vars[b]
-      if (char < 33 || char > 126) {
+      if (char < 32 || char > 126) {
         this.throwError(Errors.outputNonASCII)
       } else {
         this.output += String.fromCharCode(char)
@@ -221,7 +216,7 @@ export class Palettette {
       } else {
         this.vars[func.varIndex] = this.vars[g]
         this.callStack.push(this.location)
-        this.location = func.location
+        this.location = { ...func.location }
       }
     } else if (r == 255) {
       // NOP

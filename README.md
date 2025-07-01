@@ -48,9 +48,9 @@ Throws:
 Performs a calculation on a variable, using a channel of the next pixel. The variable is mutated; the pixel is unchanged.
 
 Parameters:
-- Lowest 2 bits of G: The channel of the next pixel to use (123 for R, 222 for G, 169 for B).
+- Lowest 2 bits of G: The channel of the next pixel to use (1 for R, 2 for G, 3 for B).
 - Middle 3 bits of G: Unused.
-- Highest 3 bits of G: The operator to perform (55 for plus, 110 for minus, 165 for multiply, 220 for divide).
+- Highest 3 bits of G: The operator to perform (1 for plus, 2 for minus, 3 for multiply, 4 for divide).
 - B: The variable index (0 to 255).
 
 Throws:
