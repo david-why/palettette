@@ -65,6 +65,14 @@ Parameters:
 - G: The variable index to receive the parameter (0 to 255).
 - B: The function index (0 to 255).
 
+### 105. Try
+
+Starts a try block that catches the next error thrown.
+
+Parameters:
+- G: Unused.
+- B: The variable to store the thrown error code (0 to 255).
+
 ### 122. Return
 
 Returns from a function previously Called.
@@ -75,14 +83,6 @@ Parameters:
 
 Throws:
 - `66` if no function was called.
-
-### 105. Try
-
-Starts a try block that catches the next error thrown.
-
-Parameters:
-- G: Unused.
-- B: The variable to store the thrown error code (0 to 255).
 
 ### 134. Branch
 
