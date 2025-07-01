@@ -116,6 +116,12 @@ function onDrop(event: DragEvent) {
   }
 }
 
+async function loadHelloWorld() {
+  const resp = await fetch("helloworld.png")
+  const file = await resp.blob()
+  handleFile(file)
+}
+
 function init() {
   canvas = document.getElementById("palettette-canvas") as HTMLCanvasElement
   runButton = document.getElementById("run-button") as HTMLButtonElement
@@ -132,10 +138,6 @@ function init() {
       setPixel(x, y, [255, 255, 255])
     }
   }
-  setPixel(0, 0, [28, 169, 100])
-  setPixel(1, 0, [28, 123, 72])
-  setPixel(2, 0, [210, 255, 100])
-  setPixel(3, 0, [0, 0, 0])
 
   palettette = new Palettette(ctx)
 
@@ -148,6 +150,8 @@ function init() {
   onResize()
 
   setInterval(onTick, 100)
+
+  loadHelloWorld()
 }
 
 document.addEventListener("DOMContentLoaded", init)
